@@ -14,7 +14,7 @@ from DataGo.fetch.util import dates_transform, _docs_to_df
 from DataGo.fetch.sw_industry_name import sw_l1_name
 
 
-def estimate_freq(dates: list):
+def estimate_freq(dates: list) -> str:
     """
     估计日期序列的平均间隔
     Parameters
@@ -113,7 +113,7 @@ def get_trade_date_offset(dates: Union[str, datetime, date, list],
                           freq: Union[str, int] = '1d',
                           return_type: str = None,
                           return_max: bool = True,
-                          ):
+                          ) -> list:
     """
     当前日后N天/周/月的交易日期
     Parameters

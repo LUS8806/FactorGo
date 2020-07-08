@@ -517,9 +517,10 @@ class FactorQuantizeTest(FactorTest):
         self.__zero_aware = zero_aware
         self.__quantize = quantize  # 强制重新分组
         self.__price_data = None  # 用来缓存价格数据
+        self.__rebalance_days = rebalance_days
         self.test_mode = test_mode
 
-    def transform(self, factor_struct: FactorDataStruct):
+    def transform(self, factor_struct: FactorDataStruct) -> QuantizeTestStruct:
         # 如果因子没有进行分组或强制重新分组，先进行分组
         if factor_struct.factor_quantile.empty:
             factor_struct = factor_struct.quantize(quantiles=self.__quantiles,

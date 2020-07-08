@@ -9,7 +9,7 @@ from math import ceil
 
 
 def dates_transform(dates: Union[str, datetime, date, list],
-                    to_type: str = None) -> Union[str, datetime, date, list]:
+                    to_type: str = None) -> list:
     """
     日期列表转换成指定的统一的格式
     Parameters
