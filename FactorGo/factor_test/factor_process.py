@@ -17,8 +17,6 @@ if TYPE_CHECKING:
     from FactorGo.factor_test.factor_base import FactorDataStruct
 
 
-# TODO FactorReturnMatch确定是否可以匹配多个ret_periods的收益率
-
 class FactorProcess(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):
     _data_loader = data_api
 
@@ -555,6 +553,10 @@ if __name__ == '__main__':
 
     print("获取市值数据")
     cap_fac.match_cap(inplace=True)
+
+    ic_res = cap_fac.ic_test(plot=False)
+
+    # ic_res.plot()
 
     print(cap_fac.forward_ret)
 

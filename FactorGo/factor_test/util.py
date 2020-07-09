@@ -268,21 +268,15 @@ def factor_ic(factor_data: Union[Series, DataFrame],
 
     """
     if isinstance(factor_data, DataFrame):
-        factor_data = factor_data.iloc[0]
+        factor_data = factor_data.iloc[:, 0]
 
     if isinstance(forward_ret, DataFrame):
-        forward_ret = forward_ret.iloc[0]
+        forward_ret = forward_ret.iloc[:, 0]
 
     if isinstance(by_group, DataFrame):
-        by_group = by_group.iloc[0]
+        by_group = by_group.iloc[:, 0]
 
-    factor_name = factor_data.name
     return_name = forward_ret.name
-
-    def src_ic(group):
-        fac_value = group[factor_name]
-        _ic = group[return_name].apply(lambda x: spearmanr(x, fac_value)[0])
-        return _ic
 
     all_data = pd.merge(factor_data, forward_ret, left_index=True, right_index=True, how='left').dropna()
     grouper = [all_data.index.get_level_values(DATE_COL)]
@@ -296,7 +290,7 @@ def factor_ic(factor_data: Union[Series, DataFrame],
     if group_adjust:
         all_data = demean_forward_returns(all_data, grouper)
 
-    ic = all_data.groupby(grouper).apply(src_ic)
+    ic = all_data.groupby(level=0).apply(lambda x: x.corr(method='spearman')[return_name][0])
 
     return ic
 
