@@ -535,6 +535,8 @@ def get_stock_return(codes_date_index: Union[MultiIndex, DataFrame] = None,
         all_price = pd.merge(st_price, et_price, left_index=True, right_index=True, how='left')
         result = all_price.eval("end/start - 1")
         result = result.to_frame(name=_name)
+        if codes_date_index is not None:
+            result = result.reindex(codes_date_index)
         return result
 
     if not periods:
@@ -705,24 +707,5 @@ def get_all_sec_codes(types=None):
     res = pd.read_sql(df_query, con=sql_session.bind)['sec_code'].tolist()
 
     return res
-
-
-if __name__ == '__main__':
-
-    csi = get_index_components(index_code='000300.XSHG',
-                               start_date='2019-01-01',
-                               end_date='2019-05-01',
-                               return_index=True)
-
-    csi_price = get_stock_price(csi, fields=['close'])
-    # csi_ret = get_stock_return(csi, periods=['1m', '2m'])
-    #
-    print(csi_price)
-    #
-    # all_codes = get_all_sec_codes(types=['stock'])
-    #
-    # print(all_codes)
-
-    # print(get_trade_date_offset(['2010-01-01'], '1d', 'str'))
 
 

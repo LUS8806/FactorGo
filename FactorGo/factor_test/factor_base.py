@@ -131,14 +131,15 @@ class FactorDataStruct(object):
         """
         对齐index
         """
+        idx = self.factor_data.index
         if not self.forward_ret.empty:
-            self.forward_ret = self.forward_ret.reindex_like(self.factor_data)
+            self.forward_ret = self.forward_ret.reindex(idx)
         if not self.market_cap.empty:
-            self.market_cap = self.market_cap.reindex_like(self.factor_data)
+            self.market_cap = self.market_cap.reindex(idx)
         if not self.industry_cat.empty:
-            self.industry_cat = self.industry_cat.reindex_like(self.factor_data)
+            self.industry_cat = self.industry_cat.reindex(idx)
         if not self.factor_quantile.empty:
-            self.factor_quantile = self.factor_quantile.reindex_like(self.factor_data)
+            self.factor_quantile = self.factor_quantile.reindex(idx)
 
     def update_data(self,
                     name: str,
@@ -240,7 +241,7 @@ class FactorDataStruct(object):
     def match_return(self,
                      periods: Union[str, List[str]] = None,
                      price_type: str = 'close',
-                     if_exists: str = 'replace',
+                     if_exists: str = 'append',
                      inplace: bool = False):
         """
         Forward收益率

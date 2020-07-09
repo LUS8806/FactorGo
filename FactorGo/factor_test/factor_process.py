@@ -522,7 +522,7 @@ class FactorMarketCapMatch(FactorProcess):
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
 
         market_cap = self._data_loader.get_stock_cap(
-            codes_date_index=factor_struct.factor_data.index)
+            codes_date_index=factor_struct.factor_data.index)['market_cap']
 
         if self._inplace:
             factor_struct.update_data('market_cap', market_cap)
@@ -550,10 +550,12 @@ if __name__ == '__main__':
     cap_fac.winsorize(inplace=True)
     cap_fac.standardize(inplace=True)
 
-    print(cap_fac.factor_data)
+    print("获取收益率数据")
+    cap_fac.match_return(inplace=True, periods=['5d', '10d'])
 
-    cap_fac.match_return(inplace=True)
+    print("获取市值数据")
     cap_fac.match_cap(inplace=True)
 
     print(cap_fac.forward_ret)
 
+    print('Done!')

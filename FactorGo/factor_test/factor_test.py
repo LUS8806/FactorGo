@@ -23,11 +23,11 @@ if TYPE_CHECKING:
 
 
 class FactorTest(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):
-    __data_loader = data_api
+    _data_loader = data_api
 
     def __init__(self, data_loader: BaseDataLoader = None):
         if data_loader is not None:
-            self.__data_loader = data_loader
+            self._data_loader = data_loader
 
     def fit(self, factor_struct):
         return self
@@ -184,14 +184,14 @@ class FactorStats(FactorTest):
 
     def __init__(self, cov_index_codes: Union[list, str] = None,
                  corr_base_factors: Union[list, DataFrame] = None):
-        self.__cov_index_codes = cov_index_codes
-        self.__corr_base_factors = corr_base_factors
+        self._cov_index_codes = cov_index_codes
+        self._corr_base_factors = corr_base_factors
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorStatsStruct]:
         ...
 
     @staticmethod
-    def __cover_ratio(factor_struct, index_code):
+    def _cover_ratio(factor_struct, index_code):
         """因子数据统计"""
         index_match = FactorMatchIndex(index_code=index_code, inplace=False, drop_na=False)
         new_fac = index_match.fit_transform(factor_struct)
@@ -255,51 +255,51 @@ class FactorICTest(FactorTest):
         ret_period: str, 收益率的周期
         """
         super().__init__(data_loader)
-        self.__group_adjust = group_adjust
-        self.__by_group = by_group
-        self.__ret_period = ret_period
+        self._group_adjust = group_adjust
+        self._by_group = by_group
+        self._ret_period = ret_period
 
     def transform(self, factor_struct: FactorDataStruct) -> ICTestStruct:
         factor_struct_cp = deepcopy(factor_struct)
         factor_data = factor_struct_cp.factor_data.copy()
 
         # 收益率数据
-        if not self.__ret_period:
+        if not self._ret_period:
             ret_name = NEXT_RET_PREFIX + 'default'
         else:
-            ret_name = NEXT_RET_PREFIX + self.__ret_period
+            ret_name = NEXT_RET_PREFIX + self._ret_period
 
         if ret_name not in factor_struct_cp.forward_ret:
-            factor_struct_cp.match_return(periods=self.__ret_period, if_exists='append')
+            factor_struct_cp.match_return(periods=self._ret_period, if_exists='append', inplace=True)
 
-        ret_data = factor_struct_cp.forward_ret[[ret_name]]
+        ret_data = factor_struct_cp.forward_ret[ret_name]
 
         # 不分组IC
         ic_data = factor_ic(factor_data,
                             ret_data,
-                            group_adjust=self.__group_adjust,
+                            group_adjust=self._group_adjust,
                             by_group=None)
 
         # 分组IC
         ic_data_gp = None
         by_group = None
 
-        if self.__by_group is not False:
-            if self.__by_group is None or self.__by_group in ['sw']:
+        if self._by_group is not False:
+            if self._by_group is None or self._by_group in ['sw']:
                 if factor_struct_cp.industry_cat.empty:
                     factor_struct_cp.match_industry(inplace=True)
                     by_group = factor_struct_cp.industry_cat['sw']
                 else:
                     by_group = factor_struct_cp.industry_cat['sw']
             else:
-                by_group = self.__by_group
+                by_group = self._by_group
 
             ic_data_gp = factor_ic(factor_data,
                                    ret_data,
-                                   group_adjust=self.__group_adjust,
+                                   group_adjust=self._group_adjust,
                                    by_group=by_group.name)
 
-        ic_decay = self.__ic_time_decay(factor_struct)
+        ic_decay = self._ic_time_decay(factor_struct)
         ic_decay[0] = ic_data.mean()
 
         ic_res = ICTestStruct(ic_series=ic_data,
@@ -310,7 +310,7 @@ class FactorICTest(FactorTest):
 
         return ic_res
 
-    def __ic_time_decay(self, factor_struct, decay_days=240, by_group=None):
+    def _ic_time_decay(self, factor_struct, decay_days=240, by_group=None):
         decay_dct = OrderedDict()
         all_dts = factor_struct.all_dates
         factor_freq = factor_struct.factor_freq
@@ -318,16 +318,16 @@ class FactorICTest(FactorTest):
         if factor_freq is None:
             factor_freq = estimate_freq(factor_struct.all_dates)
 
-        last_date = self.__data_loader.get_trade_date_offset(all_dts[-1], factor_freq)
-        last_date = self.__data_loader.get_trade_date_offset(last_date, decay_days)
-        price_data = self.__data_loader.get_stock_price(sec_codes=factor_struct.all_sec_codes,
+        last_date = self._data_loader.get_trade_date_offset(all_dts[-1], factor_freq)
+        last_date = self._data_loader.get_trade_date_offset(last_date, decay_days)
+        price_data = self._data_loader.get_stock_price(sec_codes=factor_struct.all_sec_codes,
                                                         start_date=all_dts[0],
                                                         end_date=last_date,
                                                         fields=['close'])
 
         for i in range(1, decay_days+1):
-            st_dts = self.__data_loader.get_trade_date_offset(all_dts, i)
-            ed_dts = self.__data_loader.get_trade_date_offset(st_dts, factor_freq)
+            st_dts = self._data_loader.get_trade_date_offset(all_dts, i)
+            ed_dts = self._data_loader.get_trade_date_offset(st_dts, factor_freq)
             nan_idx = np.isnan(ed_dts)
             st_dts, ed_dts, all_dts = st_dts[nan_idx], ed_dts[nan_idx], all_dts[nan_idx]
             st_dct = dict(zip(st_dts, all_dts))
@@ -341,7 +341,7 @@ class FactorICTest(FactorTest):
 
             ic_data = factor_ic(temp_factor,
                                 ret_data,
-                                group_adjust=self.__group_adjust,
+                                group_adjust=self._group_adjust,
                                 by_group=by_group)
 
             decay_dct[i] = ic_data.mean()
@@ -371,7 +371,7 @@ class FactorRegressTest(FactorTest):
         by_group
         """
         super().__init__(data_loader)
-        self.__by_group = by_group
+        self._by_group = by_group
         self.base_factor = base_factor
         self.ret_period = ret_period
 
@@ -444,15 +444,15 @@ class FactorRegressTest(FactorTest):
         df_coef_gp = None
         df_tvalue_gp = None
         by_group = None
-        if self.__by_group is not False:
-            if self.__by_group is None:
+        if self._by_group is not False:
+            if self._by_group is None:
                 if factor_struct.industry_cat.empty:
                     temp_fac = factor_struct.match_industry(inplace=False)
                     by_group = temp_fac.industry_cat
                 else:
                     by_group = factor_struct.industry_cat
             else:
-                by_group = self.__by_group
+                by_group = self._by_group
 
             group_name = by_group.columns[0]
             all_df = pd.merge(all_df, by_group, left_index=True, right_index=True)
@@ -507,34 +507,34 @@ class FactorQuantizeTest(FactorTest):
         quantize: 强制分组
         """
         super().__init__(data_loader)
-        self.__benchmark = benchmark
-        self.__trade_cost = trade_cost
-        self.__is_demean = is_demean
-        self.__quantiles = quantiles
-        self.__bins = bins
-        self.__by_group = by_group
-        self.__no_raise = no_raise
-        self.__zero_aware = zero_aware
-        self.__quantize = quantize  # 强制重新分组
-        self.__price_data = None  # 用来缓存价格数据
-        self.__rebalance_days = rebalance_days
+        self._benchmark = benchmark
+        self._trade_cost = trade_cost
+        self._is_demean = is_demean
+        self._quantiles = quantiles
+        self._bins = bins
+        self._by_group = by_group
+        self._no_raise = no_raise
+        self._zero_aware = zero_aware
+        self._quantize = quantize  # 强制重新分组
+        self._price_data = None  # 用来缓存价格数据
+        self._rebalance_days = rebalance_days
         self.test_mode = test_mode
 
     def transform(self, factor_struct: FactorDataStruct) -> QuantizeTestStruct:
         # 如果因子没有进行分组或强制重新分组，先进行分组
         if factor_struct.factor_quantile.empty:
-            factor_struct = factor_struct.quantize(quantiles=self.__quantiles,
-                                                   bins=self.__bins,
-                                                   by_group=self.__by_group,
-                                                   no_raise=self.__no_raise,
-                                                   zero_aware=self.__zero_aware,
+            factor_struct = factor_struct.quantize(quantiles=self._quantiles,
+                                                   bins=self._bins,
+                                                   by_group=self._by_group,
+                                                   no_raise=self._no_raise,
+                                                   zero_aware=self._zero_aware,
                                                    inplace=False
                                                    )
         if self.test_mode == 'vector':
-            ret = self.__vectorize_backtest(factor_struct)
+            ret = self._vectorize_backtest(factor_struct)
 
         elif self.test_mode == 'event':
-            tester = FactorBackTest(data_loader=self.__data_loader, trade_cost=self.__trade_cost)
+            tester = FactorBackTest(data_loader=self._data_loader, trade_cost=self._trade_cost)
             ret = tester.fit_transform(factor_struct)
 
         else:
@@ -542,12 +542,12 @@ class FactorQuantizeTest(FactorTest):
 
         quantile_test = QuantizeTestStruct(quantile_return=ret,
                                            factor_name=factor_struct.factor_name,
-                                           benchmark=self.__benchmark)
+                                           benchmark=self._benchmark)
 
         return quantile_test
 
     @staticmethod
-    def __quantile_to_portfolio_target(factor_quantile: DataFrame) -> dict:
+    def _quantile_to_portfolio_target(factor_quantile: DataFrame) -> dict:
         """TODO 根据不同的参数设置返回目标组合权重
            TODO 路径依赖情况下的因子测试
         """
@@ -560,23 +560,23 @@ class FactorQuantizeTest(FactorTest):
 
         return port_weight
 
-    def __vectorize_backtest(self, factor_struct: FactorDataStruct) -> DataFrame:
+    def _vectorize_backtest(self, factor_struct: FactorDataStruct) -> DataFrame:
         """向量式回测"""
         st = factor_struct.all_dates[0]
         et = factor_struct.all_dates[-1]
         offset = estimate_freq(factor_struct.all_dates)
-        et = self.__data_loader.get_trade_date_offset(et, freq=offset)
-        all_dts = self.__data_loader.get_trade_date_between(st, et, return_type='datetime')
-        if self.__price_data is None:
+        et = self._data_loader.get_trade_date_offset(et, freq=offset)
+        all_dts = self._data_loader.get_trade_date_between(st, et, return_type='datetime')
+        if self._price_data is None:
             print('Loading Price Data...')
-            self.__price_data = self.__data_loader.get_stock_price(sec_codes=factor_struct.all_sec_codes,
+            self._price_data = self._data_loader.get_stock_price(sec_codes=factor_struct.all_sec_codes,
                                                                    start_date=st,
                                                                    end_date=et,
                                                                    fields=['close'])
-            self.__price_data = self.__price_data.reset_index().pivot(index=DATE_COL, columns=CODE_COL, values='close')
+            self._price_data = self._price_data.reset_index().pivot(index=DATE_COL, columns=CODE_COL, values='close')
             print('Price Data Loaded...')
 
-        portfolio_tar = self.__quantile_to_portfolio_target(factor_struct.factor_quantile)
+        portfolio_tar = self._quantile_to_portfolio_target(factor_struct.factor_quantile)
 
         def _cum_ret_for_q(_portfolio_tar):
             """TODO 考虑交易成本；权重，当前默认等权
@@ -592,7 +592,7 @@ class FactorQuantizeTest(FactorTest):
 
             for dt in all_dts:
                 if st_codes is not None:
-                    cur_price = self.__price_data.loc[dt, st_codes]
+                    cur_price = self._price_data.loc[dt, st_codes]
 
                 if st_price is not None:
                     nv = (cur_price/st_price).mean()*st_nv
@@ -600,8 +600,8 @@ class FactorQuantizeTest(FactorTest):
                 if dt in _portfolio_tar:
                     st_codes = _portfolio_tar[dt].keys()
                     st_weight = pd.Series(_portfolio_tar[dt])
-                    st_price = self.__price_data.loc[dt, st_codes]
-                    st_nv = nv*(1-self.__trade_cost)
+                    st_price = self._price_data.loc[dt, st_codes]
+                    st_nv = nv*(1-self._trade_cost)
 
                 nvq[dt] = nv
 
@@ -635,14 +635,14 @@ class FactorBackTest(FactorTest):
         """
 
         super().__init__(data_loader)
-        self.__initial_capital = initial_capital
-        self.__trade_cost = trade_cost
-        self.__rebalance_days = rebalance_days
-        self.__cash_keep = cash_keep
+        self._initial_capital = initial_capital
+        self._trade_cost = trade_cost
+        self._rebalance_days = rebalance_days
+        self._cash_keep = cash_keep
 
         self.cerebro: bt.Cerebro = None
 
-    def __cerebro_init(self, factor_struct: FactorDataStruct):
+    def _cerebro_init(self, factor_struct: FactorDataStruct):
         """初始化cerebro，加载数据"""
         print("Initializing Cerebro...")
         cerebro = bt.Cerebro()
@@ -652,7 +652,7 @@ class FactorBackTest(FactorTest):
 
         # 1. 加载数据
         print("Loading Stock Price Data...")
-        price_dct = self.__load_price_data(sec_codes, start_date, end_date)
+        price_dct = self._load_price_data(sec_codes, start_date, end_date)
         for sec_code, sec_df in price_dct.items():
             print(sec_df)
             data_feed = AmountPandasFeed(dataname=sec_df)
@@ -660,9 +660,9 @@ class FactorBackTest(FactorTest):
 
         # 2. 设置参数
         # 初始资金
-        cerebro.broker.setcash(self.__initial_capital)
+        cerebro.broker.setcash(self._initial_capital)
         # 交易成本
-        cerebro.broker.setcommission(self.__trade_cost)
+        cerebro.broker.setcommission(self._trade_cost)
 
         # 成交价格（当前收盘价/下一开盘/下根VWAP）
         # cerebro.broker.set_coc()
@@ -673,7 +673,7 @@ class FactorBackTest(FactorTest):
         self.cerebro = cerebro
         print("Cerebro Initialized...")
 
-    def __load_price_data(self,
+    def _load_price_data(self,
                           sec_codes: list,
                           start_date: str,
                           end_date: str,
@@ -691,7 +691,7 @@ class FactorBackTest(FactorTest):
         -------
 
         """
-        price_data = self.__data_loader.get_stock_price(sec_codes=sec_codes,
+        price_data = self._data_loader.get_stock_price(sec_codes=sec_codes,
                                                         start_date=start_date,
                                                         end_date=end_date,
                                                         freq=freq)
@@ -712,7 +712,7 @@ class FactorBackTest(FactorTest):
         return price_dct
 
     @staticmethod
-    def __quantile_to_portfolio_target(factor_quantile: DataFrame) -> dict:
+    def _quantile_to_portfolio_target(factor_quantile: DataFrame) -> dict:
 
         port_weight = OrderedDict()
         for (dt, q), df in factor_quantile.groupby(['trade_date', factor_quantile]):
@@ -725,15 +725,15 @@ class FactorBackTest(FactorTest):
     def transform(self, factor_struct: FactorDataStruct) -> DataFrame:
 
         if self.cerebro is None:
-            self.__cerebro_init(factor_struct)
+            self._cerebro_init(factor_struct)
 
-        port_weight = self.__quantile_to_portfolio_target(factor_struct.factor_quantile)
+        port_weight = self._quantile_to_portfolio_target(factor_struct.factor_quantile)
 
         q_ret = OrderedDict()
 
         for q, v in port_weight.items():
             cerebro = deepcopy(self.cerebro)
-            cerebro.addstrategy(PortfolioRebalanceStrategy, v, self.__cash_keep)
+            cerebro.addstrategy(PortfolioRebalanceStrategy, v, self._cash_keep)
             strats = cerebro.run()
             strat = strats[0]
             daily_return = strat.analyzers.pnl.get_analysis()
