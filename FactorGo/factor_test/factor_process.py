@@ -20,12 +20,12 @@ if TYPE_CHECKING:
 # TODO FactorReturnMatch确定是否可以匹配多个ret_periods的收益率
 
 class FactorProcess(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):
-    __data_loader = data_api
+    _data_loader = data_api
 
     def __init__(self, data_loader: BaseDataLoader = None, inplace=False):
         if data_loader is not None:
-            self.__data_loader = data_loader
-        self.__inplace = inplace
+            self._data_loader = data_loader
+        self._inplace = inplace
 
     def fit(self, factor_struct):
         return self
@@ -54,10 +54,10 @@ class FactorMatchIndex(FactorProcess):
         """
         super().__init__(data_loader, inplace)
         self.index_code = index_code
-        self.__drop_na = drop_na
+        self._drop_na = drop_na
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
-        index_component = self.__data_loader.get_index_components(
+        index_component = self._data_loader.get_index_components(
             index_code=self.index_code,
             dates=factor_struct.all_dates).set_index([DATE_COL, CODE_COL])
 
@@ -66,13 +66,13 @@ class FactorMatchIndex(FactorProcess):
                               how='right',
                               left_index=True,
                               right_index=True)
-        if self.__drop_na:
+        if self._drop_na:
             merge_data = merge_data.dropna()
-        if self.__inplace:
-            factor_struct.update_data('factor_data', merge_data, is_na_processed=self.__drop_na)
+        if self._inplace:
+            factor_struct.update_data('factor_data', merge_data, is_na_processed=self._drop_na)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
-            factor_struct_cp.update_data('factor_data', merge_data, is_na_processed=self.__drop_na)
+            factor_struct_cp.update_data('factor_data', merge_data, is_na_processed=self._drop_na)
             return factor_struct_cp
 
 
@@ -94,25 +94,25 @@ class FactorNanProcess(FactorProcess):
         inplace: bool, 默认False, 返回新的FactorDataStruct, 为'True'则在原有的FactorDataStruct上更新数据
         """
         super().__init__(data_loader, inplace)
-        self.__method = method
-        self.__constant_val = constant_val
+        self._method = method
+        self._constant_val = constant_val
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
         factor_data = factor_struct.factor_data.copy()
-        if self.__method == 'drop':
+        if self._method == 'drop':
             factor_data = factor_data.dropna()
-        if self.__method in ['mean', 'median', 'most_frequent', 'constant']:
-            if self.__method == 'constant' and self.__constant_val is None:
+        if self._method in ['mean', 'median', 'most_frequent', 'constant']:
+            if self._method == 'constant' and self._constant_val is None:
                 raise ValueError("Must set a value for constant_val when method is 'constant'!")
 
             def _nan_process(df):
-                imputer = SimpleImputer(strategy=self.__method)
+                imputer = SimpleImputer(strategy=self._method)
                 imputer.fit(df)
                 return imputer.transform(df)
 
             factor_data = factor_data.groupby(level=0).apply(_nan_process)
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('factor_data', factor_data, is_na_processed=True)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
@@ -148,25 +148,25 @@ class FactorWinsorize(FactorProcess):
         inplace: bool, 默认False, 返回新的FactorDataStruct, 为'True'则在原有的FactorDataStruct上更新数据
         """
         super().__init__(data_loader, inplace)
-        self.__method = method
-        self.__ex_num = ex_num
+        self._method = method
+        self._ex_num = ex_num
 
         if exec_func:
-            self.__exec_func = exec_func
+            self._exec_func = exec_func
         else:
             if method in ['std', 'median']:
-                self.__exec_func = partial(self.exec_func_dict[method], ex_num=ex_num)
+                self._exec_func = partial(self.exec_func_dict[method], ex_num=ex_num)
             elif method == 'quantile':
-                self.__exec_func = partial(self.exec_func_dict[method], up=up, low=low)
+                self._exec_func = partial(self.exec_func_dict[method], up=up, low=low)
             else:
                 raise ValueError("Method can only be one of 'std', 'median' or 'quantile'")
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
 
         factor_data = factor_struct.factor_data.copy()
-        factor_data = factor_data.groupby(level=DATE_COL, sort=True).apply(self.__exec_func)
+        factor_data = factor_data.groupby(level=DATE_COL, sort=True).apply(self._exec_func)
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('factor_data', factor_data, is_winsorized=True)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
@@ -195,25 +195,25 @@ class FactorStandardize(FactorProcess):
         inplace: bool, 默认False, 返回新的FactorDataStruct, 为'True'则在原有的FactorDataStruct上更新数据
         """
         super().__init__(data_loader, inplace)
-        self.__method = method
+        self._method = method
 
         if exec_func:
-            self.__exec_func = exec_func
+            self._exec_func = exec_func
         else:
             if method in ['z_score']:
-                self.__exec_func = self.exec_func_dict[method]
+                self._exec_func = self.exec_func_dict[method]
             else:
                 raise ValueError("Method can only be one of 'z_score', 'median' or 'percentile'")
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
         factor_data = factor_struct.factor_data.copy()
-        factor_data = factor_data.groupby(level=DATE_COL, sort=True).apply(self.__exec_func)
+        factor_data = factor_data.groupby(level=DATE_COL, sort=True).apply(self._exec_func)
 
-        if self.__inplace:
-            factor_struct.update_data('factor_data', factor_data, is_standardized=self.__method)
+        if self._inplace:
+            factor_struct.update_data('factor_data', factor_data, is_standardized=self._method)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
-            factor_struct_cp.update_data('factor_data', factor_data, is_standardized=self.__method)
+            factor_struct_cp.update_data('factor_data', factor_data, is_standardized=self._method)
             return factor_struct_cp
 
 
@@ -236,7 +236,7 @@ class FactorCodeFilter(FactorProcess):
         self.days_threshold = days_threshold
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
-        sec_info = self.__data_loader.get_stock_list_days(sec_codes=factor_struct.all_sec_codes)
+        sec_info = self._data_loader.get_stock_list_days(sec_codes=factor_struct.all_sec_codes)
         df_factor = factor_struct.factor_data.copy().reset_index()
         days_delta = timedelta(days=self.days_threshold)
         df_factor_list = pd.merge(df_factor, sec_info, how='left')
@@ -247,7 +247,7 @@ class FactorCodeFilter(FactorProcess):
         df_factor = df_factor.loc[list_con & dlist_con].reset_index(drop=True)
         df_factor = df_factor.set_index([DATE_COL, CODE_COL])
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('factor_data', df_factor, is_filtered=self.days_threshold)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
@@ -272,8 +272,8 @@ class FactorNeutralize(FactorProcess):
         inplace: bool, 默认False, 返回新的FactorDataStruct, 为'True'则在原有的FactorDataStruct上更新数据
         """
         super().__init__(data_loader, inplace)
-        self.__normalize = normalize
-        self.__industry = industry if industry else 'sw'
+        self._normalize = normalize
+        self._industry = industry if industry else 'sw'
         self.base_factor = base_factor
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
@@ -285,13 +285,13 @@ class FactorNeutralize(FactorProcess):
 
         if base_factor is None:
             factor_struct_cp = deepcopy(factor_struct)
-            if factor_struct_cp.industry_cat.empty or self.__industry not in factor_struct_cp.industry_cat:
-                factor_struct_cp.match_industry(industry=self.__industry, inplace=True)
+            if factor_struct_cp.industry_cat.empty or self._industry not in factor_struct_cp.industry_cat:
+                factor_struct_cp.match_industry(industry=self._industry, inplace=True)
 
             if factor_struct_cp.market_cap.empty:
                 factor_struct_cp.match_cap(inplace=True)
 
-            factor_data_gp = factor_struct_cp.industry_cat[self.__industry].groupby(level=0, sort=True)
+            factor_data_gp = factor_struct_cp.industry_cat[self._industry].groupby(level=0, sort=True)
             ind_data = factor_data_gp.apply(to_dummy_variable)
             base_factor = pd.merge(ind_data, np.log(factor_struct_cp.market_cap),
                                    right_index=True, left_index=True, how='left')
@@ -336,14 +336,14 @@ class FactorNeutralize(FactorProcess):
 
             residual = results.resid.reindex(df.index)
 
-            if self.__normalize:
+            if self._normalize:
                 residual = (residual - residual.mean()) / residual.std()
             return residual
 
         all_fac_data_gp = tar_df_factor.groupby(level=0)
         all_residual = all_fac_data_gp.apply(_neutralize)
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('factor_data', all_residual, is_neutralized=base_cols)
         else:
             factor_struct_cp = deepcopy(factor_struct)
@@ -377,21 +377,21 @@ class FactorQuantize(FactorProcess):
         if quantiles and bins:
             raise ValueError("quantiles和bins同时只能指定一个参数")
 
-        self.__quantiles = quantiles
-        self.__bins = bins
-        self.__by_group = by_group
-        self.__no_raise = no_raise
-        self.__zero_aware = zero_aware
+        self._quantiles = quantiles
+        self._bins = bins
+        self._by_group = by_group
+        self._no_raise = no_raise
+        self._zero_aware = zero_aware
 
     @property
     def quantize_num(self):
         """分组的数量"""
-        if isinstance(self.__quantiles, int):
-            quantize_num = self.__quantiles
-        elif isinstance(self.__quantiles, list):
-            quantize_num = len(self.__quantiles) - 1
-        elif isinstance(self.__bins, list):
-            quantize_num = len(self.__bins) - 1
+        if isinstance(self._quantiles, int):
+            quantize_num = self._quantiles
+        elif isinstance(self._quantiles, list):
+            quantize_num = len(self._quantiles) - 1
+        elif isinstance(self._bins, list):
+            quantize_num = len(self._bins) - 1
         else:
             quantize_num = None
         return quantize_num
@@ -400,13 +400,13 @@ class FactorQuantize(FactorProcess):
         factor_data = factor_struct.factor_data.copy()
         factor_quantile = quantize_factor(factor_data,
                                           factor_name=factor_struct.factor_name,
-                                          quantiles=self.__quantiles,
-                                          bins=self.__bins,
-                                          by_group=self.__by_group,
-                                          no_raise=self.__no_raise,
-                                          zero_aware=self.__zero_aware)
+                                          quantiles=self._quantiles,
+                                          bins=self._bins,
+                                          by_group=self._by_group,
+                                          no_raise=self._no_raise,
+                                          zero_aware=self._zero_aware)
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('factor_quantile', factor_quantile)
 
         else:
@@ -433,25 +433,25 @@ class FactorReturnMatch(FactorProcess):
         inplace: bool, 默认False, 返回新的FactorDataStruct, 为'True'则在原有的FactorDataStruct上更新数据
         """
         super().__init__(data_loader, inplace)
-        self.__periods = periods
-        self.__price_type = price_type
-        self.__if_exists = if_exists
-        if isinstance(self.__periods, str):
-            self.__periods = [self.__periods]
+        self._periods = periods
+        self._price_type = price_type
+        self._if_exists = if_exists
+        if isinstance(self._periods, str):
+            self._periods = [self._periods]
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
-        forward_ret = self.__data_loader.get_stock_return(
+        forward_ret = self._data_loader.get_stock_return(
             codes_date_index=factor_struct.factor_data.index,
-            periods=self.__periods)
+            periods=self._periods)
 
         origin_forward = factor_struct.forward_ret.copy()
 
-        if self.__if_exists == 'append' and not origin_forward.empty:
+        if self._if_exists == 'append' and not origin_forward.empty:
             for col in origin_forward:
                 if col not in forward_ret:
                     forward_ret[col] = origin_forward[col]
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('forward_ret', forward_ret)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
@@ -459,7 +459,7 @@ class FactorReturnMatch(FactorProcess):
             return factor_struct_cp
 
     def set_period(self, periods: Union[str, List[str]]):
-        self.__periods = periods
+        self._periods = periods
 
 
 class FactorIndustryMatch(FactorProcess):
@@ -480,23 +480,23 @@ class FactorIndustryMatch(FactorProcess):
         """
 
         super().__init__(data_loader, inplace)
-        self.__industry = industry
-        self.__if_exists = if_exists
+        self._industry = industry
+        self._if_exists = if_exists
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
 
-        stock_industry = self.__data_loader.get_stock_industries(
+        stock_industry = self._data_loader.get_stock_industries(
             codes_date_index=factor_struct.factor_data.index,
-            industry=self.__industry)
+            industry=self._industry)
 
         origin_industry = factor_struct.industry_cat.copy()
 
-        if self.__if_exists == 'append' and not origin_industry.empty:
+        if self._if_exists == 'append' and not origin_industry.empty:
             for col in origin_industry:
                 if col not in stock_industry:
                     stock_industry[col] = origin_industry[col]
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('industry_cat', stock_industry)
 
         else:
@@ -521,12 +521,39 @@ class FactorMarketCapMatch(FactorProcess):
 
     def transform(self, factor_struct: FactorDataStruct) -> Union[None, FactorDataStruct]:
 
-        market_cap = self.__data_loader.get_stock_cap(
+        market_cap = self._data_loader.get_stock_cap(
             codes_date_index=factor_struct.factor_data.index)
 
-        if self.__inplace:
+        if self._inplace:
             factor_struct.update_data('market_cap', market_cap)
         else:
             factor_struct_cp = copy.deepcopy(factor_struct)
             factor_struct_cp.update_data('market_cap', market_cap)
             return factor_struct_cp
+
+
+if __name__ == '__main__':
+    from FactorGo.factor_test.factor_base import FactorDataStruct
+    from DataGo.fetch import get_index_components, get_stock_fin_indicators
+
+    # 取指数成分股
+    csi300 = get_index_components('000300.XSHG', start_date='2019-01-01', end_date='2019-10-01', return_index=True)
+
+    # 取市值数据
+    csi300_cap = get_stock_fin_indicators(codes_date_index=csi300, indicators=['market_cap'])
+
+    cap_fac = FactorDataStruct(factor_data=np.log(csi300_cap), factor_col='market_cap')
+    print(cap_fac.factor_name)
+
+    # 数据处理
+    cap_fac.nan_process(inplace=True)
+    cap_fac.winsorize(inplace=True)
+    cap_fac.standardize(inplace=True)
+
+    print(cap_fac.factor_data)
+
+    cap_fac.match_return(inplace=True)
+    cap_fac.match_cap(inplace=True)
+
+    print(cap_fac.forward_ret)
+

@@ -66,8 +66,7 @@ def sec_code_reformat(sec_codes: Union[Series, np.ndarray, list]) -> Series:
 
 
 def df_winsorize_std(df: Union[Series, DataFrame],
-                     ex_num: int = 3,
-                     axis: int = 0) -> Union[Series, DataFrame]:
+                     ex_num: int = 3) -> Union[Series, DataFrame]:
     """
     标准差去极端值
 
@@ -75,22 +74,20 @@ def df_winsorize_std(df: Union[Series, DataFrame],
     ----------
     df: DataFrame, 数据
     ex_num: int, 极值判断的范围，如果ex_num=3，表示数据到均值距离超过3倍标准差，会被修正为离均值3倍标准差的大小
-    axis: int, axis=0:按列处理，axis=1: 按行处理
 
     Returns
     -------
     DataFrame, 处理后的数据
     """
-    mu = df.mean(axis=axis)
-    std = df.std(axis=axis)
+    mu = df.mean()
+    std = df.std()
     upper = mu + ex_num * std
     lower = mu - ex_num * std
-    return df.clip(lower=lower, upper=upper, axis=1 - axis)
+    return df.clip(lower=lower, upper=upper)
 
 
 def df_winsorize_mad(df: Union[Series, DataFrame],
-                     ex_num: int = 5,
-                     axis: int = 0) -> Union[Series, DataFrame]:
+                     ex_num: int = 5) -> Union[Series, DataFrame]:
     """
     MAD(median absolute deviation)去极值
 
@@ -98,25 +95,24 @@ def df_winsorize_mad(df: Union[Series, DataFrame],
     ----------
     df: DataFrame, 数据
     ex_num: int, 极值判断的范围
-    axis: int, axis=0:按列处理，axis=1: 按行处理
 
     Returns
     -------
     DataFrame, 处理后的数据
     """
-    median_1 = df.median(axis=axis)
-    median_2 = (df - median_1).abs().median(axis=axis)
+    median_1 = df.median()
+    median_2 = (df - median_1).abs().median()
 
     upper = median_1 + ex_num * median_2
     lower = median_1 - ex_num * median_2
 
-    return df.clip(lower=lower, upper=upper, axis=1 - axis)
+    return df.clip(lower=lower, upper=upper)
 
 
 def df_winsorize_quantile(df: Union[Series, DataFrame],
                           low: float = 0.05,
                           up: float = 0.95,
-                          axis: int = 0) -> Union[Series, DataFrame]:
+                          ) -> Union[Series, DataFrame]:
     """
     分位数去极值
 
@@ -125,36 +121,33 @@ def df_winsorize_quantile(df: Union[Series, DataFrame],
     df: DataFrame, 数据
     low: float, 默认为0.05, 极值判断的下分位数
     up: float, 默认为0.95, 极值判断的上分位数
-    axis: int, axis=0:按列处理，axis=1: 按行处理
 
     Returns
     -------
     DataFrame, 处理后的数据
     """
 
-    upper = df.quantile(up, axis=axis)
-    lower = df.quantile(low, axis=axis)
+    upper = df.quantile(up)
+    lower = df.quantile(low)
 
-    return df.clip(lower=lower, upper=upper, axis=1 - axis)
+    return df.clip(lower=lower, upper=upper)
 
 
-def df_standardize_norm(df: Union[Series, DataFrame],
-                        axis: int = 0) -> Union[Series, DataFrame]:
+def df_standardize_norm(df: Union[Series, DataFrame]) -> Union[Series, DataFrame]:
     """
     单个df标准化, z-score
 
     Parameters
     ----------
     df: DataFrame, 数据
-    axis: int, axis=0:按列处理，axis=1: 按行处理
 
     Returns
     -------
     DataFrame, 处理后的数据
     """
-    mu = df.mean(axis=axis)
-    std = df.std(axis=axis)
-    return df.subtract(mu, axis=1 - axis).divide(std, axis=1 - axis)
+    mu = df.mean()
+    std = df.std()
+    return df.subtract(mu).divide(std)
 
 
 def demean_forward_returns(forward_ret: Series,

@@ -131,11 +131,14 @@ class FactorDataStruct(object):
         """
         对齐index
         """
-        factor_idx = self.factor_data.index
-        self.forward_ret.reindex(factor_idx, inplace=True)
-        self.market_cap.reindex(factor_idx, inplace=True)
-        self.industry_cat.reindex(factor_idx, inplace=True)
-        self.factor_quantile.reindex(factor_idx, inplace=True)
+        if not self.forward_ret.empty:
+            self.forward_ret = self.forward_ret.reindex_like(self.factor_data)
+        if not self.market_cap.empty:
+            self.market_cap = self.market_cap.reindex_like(self.factor_data)
+        if not self.industry_cat.empty:
+            self.industry_cat = self.industry_cat.reindex_like(self.factor_data)
+        if not self.factor_quantile.empty:
+            self.factor_quantile = self.factor_quantile.reindex_like(self.factor_data)
 
     def update_data(self,
                     name: str,
