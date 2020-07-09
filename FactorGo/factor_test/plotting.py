@@ -60,7 +60,7 @@ def plot_ic_test(ic_test) -> Figure:
         specs=[[{"type": "table"}],
                [{"secondary_y": True}]])
 
-    if ic_test.by_group:
+    if ic_test.by_group is not None:
         fig = make_subplots(
             rows=3, cols=1,
             row_heights=[0.1, 0.35, 0.55],
@@ -104,7 +104,7 @@ def plot_ic_test(ic_test) -> Figure:
         row=2, col=1, secondary_y=True
     )
 
-    if ic_test.by_group:
+    if ic_test.by_group is not None:
 
         gp_ic = pd.DataFrame({"RankIC均值": ic_test.ic_mean(by_group=True),
                               "RankIC标准差": ic_test.ic_std(by_group=True),

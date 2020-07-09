@@ -549,14 +549,14 @@ if __name__ == '__main__':
     cap_fac.standardize(inplace=True)
 
     print("获取收益率数据")
-    cap_fac.match_return(inplace=True, periods=['5d', '10d'])
+    # cap_fac.match_return(inplace=True, periods=['5d', '10d'])
 
     print("获取市值数据")
-    cap_fac.match_cap(inplace=True)
+    # cap_fac.match_cap(inplace=True)
 
     ic_res = cap_fac.ic_test(plot=False)
 
-    # ic_res.plot()
+    ic_res.plot()
 
     print(cap_fac.forward_ret)
 

@@ -290,7 +290,7 @@ def factor_ic(factor_data: Union[Series, DataFrame],
     if group_adjust:
         all_data = demean_forward_returns(all_data, grouper)
 
-    ic = all_data.groupby(level=0).apply(lambda x: x.corr(method='spearman')[return_name][0])
+    ic = all_data.groupby(grouper).apply(lambda x: x.corr(method='spearman')[return_name][0])
 
     return ic
 

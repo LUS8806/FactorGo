@@ -303,7 +303,7 @@ class FactorICTest(FactorTest):
         # ic_decay[0] = ic_data.mean()
 
         ic_res = ICTestStruct(ic_series=ic_data,
-                              ic_series_gp=ic_data_gp.unstack(),
+                              ic_series_gp=ic_data_gp,
                               # ic_decay=ic_decay,
                               factor_name=factor_struct.factor_name,
                               by_group=by_group.name)
