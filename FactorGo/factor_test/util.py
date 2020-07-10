@@ -15,10 +15,6 @@ from sklearn.preprocessing import OneHotEncoder
 from FactorGo.factor_test.constant import *
 from DataGo.fetch import get_trade_date_between
 
-"""
-TODO check_ret_col函数，检查ret_period是否符合要求
-"""
-
 
 def to_dummy_variable(data: Union[DataFrame, Series]) -> DataFrame:
     """
@@ -295,7 +291,7 @@ def factor_ic(factor_data: Union[Series, DataFrame],
     return ic
 
 
-def exp_weight(half_life, window_size, reverse=True):
+def exp_weight(half_life: int, window_size: int, reverse:bool = True) -> np.ndarray:
     """根据半衰期计算指数加权的权重"""
     alpha = 1 - np.exp(np.log(0.5) / half_life)
     ew = np.zeros(window_size)
