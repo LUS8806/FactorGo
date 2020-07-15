@@ -15,44 +15,69 @@ from datetime import datetime, date
 from pandas import DataFrame, MultiIndex, Index
 from typing import Union, List
 from sklearn.base import BaseEstimator, TransformerMixin
-from FactorGo.factor_test.factor_base import FactorDataStruct
+from FactorGo.factor_base import FactorDataStruct
 from FactorGo.factor_test.util import exp_weight
-from FactorGo.data_loader import data_api
+from FactorGo.data_loader import data_api, BaseDataLoader
 
 
-class BaseFactorAlgo(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):
+class BaseFactorAlgo(object, metaclass=abc.ABCMeta):
 
-    __data_loader = data_api
+    """
+    因子计算基础类：
 
-    def __init__(self):
-        ...
+    @属性
 
-    def fit(self, data):
-        return self
+    @方法
+    1. 增量更新: update_daily
+    2. 批量更新: update_batch
 
-    def prepare_data(self):
+    """
+
+    _data_loader = data_api
+    params = {}
+
+    def __init__(self, data_loader: BaseDataLoader = None):
+        if data_loader is not None:
+            self._data_loader = data_loader
+
+    @abc.ABCMeta
+    def _update_daily(self, start_date=None):
+        """日度更新"""
         ...
 
     @abc.ABCMeta
-    def transform(self, data: DataFrame) -> FactorDataStruct:
+    def _update_batch(self, start_date, end_date):
+        """批量更新"""
         ...
 
-    def save(self, conn, table_name):
+    def update(self, start_date, end_date):
+        """更新到最新数据"""
+        ...
+
+    def save_to_db(self, conn, table_name):
         """保存至数据库"""
         ...
 
+    def load_data(self, sec_codes, start_date, end_date):
+        """加载数据"""
+        ...
 
-class BetaSigma(object):
+    @classmethod
+    def set_params(cls, **kwargs):
+        """设置计算参数"""
+        for k, v in kwargs.items():
+            cls.params[k] = v
 
-    __data_loader = data_api
+
+class BetaSigma(BaseFactorAlgo):
 
     params = {
         'beta_ws': 252,
         'beta_hl': 63,
     }
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, data_loader: BaseDataLoader = None):
+        super().__init__(data_loader)
 
     def prepare_data(self,
                      codes_date_index: Union[MultiIndex, DataFrame] = None,
@@ -62,28 +87,32 @@ class BetaSigma(object):
                      start_date: Union[str, datetime, date] = None,
                      end_date: Union[str, datetime, date] = None) -> DataFrame:
 
-        stock_price = self.__data_loader.get_stock_price(codes_date_index,
-                                                         sec_codes,
-                                                         dates,
-                                                         start_date,
-                                                         end_date,
-                                                         fields=['close'])
+        stock_price = self._data_loader.get_stock_price(codes_date_index,
+                                                        sec_codes,
+                                                        dates,
+                                                        start_date,
+                                                        end_date,
+                                                        fields=['close'])
 
-        index_price = self.__data_loader.get_index_price(market_index, start_date, end_date, fields=['close'])
+        index_price = self._data_loader.get_index_price(market_index, start_date, end_date, fields=['close'])
 
         stock_ret = stock_price['close'].unstack().pct_change().dropna()
         index_ret = index_price['close'].unstack().pct_change().dropna()
         df_ret = pd.concat([stock_ret, index_ret], axis=1)
         return df_ret
 
-    def run(self, data: DataFrame = None,
-            codes_date_index: Union[MultiIndex, DataFrame] = None,
-            sec_codes: List[str] = None,
-            market_index: str = '000300.XSHG',
-            dates: Union[str, datetime, date, list, Index] = None,
-            start_date: Union[str, datetime, date] = None,
-            end_date: Union[str, datetime, date] = None,
-            rf_rate: float = 0.03):
+    def _update_daily(self, start_date=None):
+        ...
+
+    def _update_batch(self,
+                      data: DataFrame = None,
+                      codes_date_index: Union[MultiIndex, DataFrame] = None,
+                      sec_codes: List[str] = None,
+                      market_index: str = '000300.XSHG',
+                      dates: Union[str, datetime, date, list, Index] = None,
+                      start_date: Union[str, datetime, date] = None,
+                      end_date: Union[str, datetime, date] = None,
+                      rf_rate: float = 0.03):
         """
         Beta >>> BETA
         Residual Volatility >>> HSIGMA
@@ -146,6 +175,10 @@ class BetaSigma(object):
                 df_hsigma[sec] = hsigma
 
         return pd.DataFrame(df_beta), pd.DataFrame(df_hsigma)
+
+    def _calculate_factor_for_each_sec(self):
+        """TODO 价格数据内存数据库 或者使用 @lru_cache缓存"""
+        ...
 
 
 class RSTA(BaseFactorAlgo):

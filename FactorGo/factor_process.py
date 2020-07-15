@@ -8,13 +8,13 @@ from typing import List, Callable
 from FactorGo.factor_test.util import *
 from functools import partial
 from datetime import timedelta
-from FactorGo.factor_test.data_loader import data_api, BaseDataLoader
+from FactorGo.data_loader import data_api, BaseDataLoader
 from sklearn.impute import SimpleImputer
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from FactorGo.factor_test.factor_base import FactorDataStruct
+    from FactorGo.factor_base import FactorDataStruct
 
 
 class FactorProcess(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):

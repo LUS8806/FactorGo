@@ -225,6 +225,7 @@ def get_index_components(index_code: str,
                          end_date: Union[str, datetime, date] = None,
                          freq: str = '1d',
                          offset: int = None,
+                         weight: bool = False,
                          return_index: bool = False,
                          ) -> Union[DataFrame, MultiIndex]:
     """
@@ -248,6 +249,7 @@ def get_index_components(index_code: str,
     df_query = sql_session.query(
         IndexComponent.trade_date,
         IndexComponent.sec_code,
+        IndexComponent.weight,
     ).filter(
         IndexComponent.index_code == index_code,
         IndexComponent.trade_date.in_(dates)
@@ -256,6 +258,9 @@ def get_index_components(index_code: str,
     res = pd.read_sql(df_query, con=sql_session.bind)
     res['trade_date'] = pd.to_datetime(res['trade_date'])
     res = res.sort_values(by=['trade_date', 'sec_code']).reset_index(drop=True)
+
+    if not weight:
+        res = res.drop('weight', axis=1)
     if return_index:
         res = res.set_index(['trade_date', 'sec_code']).index
     return res

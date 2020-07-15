@@ -11,15 +11,15 @@ from pyfolio.timeseries import perf_stats
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from FactorGo.factor_test.util import *
-from FactorGo.factor_test.data_loader import data_api, BaseDataLoader
+from FactorGo.data_loader import data_api, BaseDataLoader
 from FactorGo.factor_test.constant import *
 from FactorGo.factor_test.plotting import *
 from FactorGo.factor_test.bt_rebalance_strategy import PortfolioRebalanceStrategy, AmountPandasFeed
 from DataGo.fetch import estimate_freq
-from FactorGo.factor_test.factor_process import FactorMatchIndex
+from FactorGo.factor_process import FactorMatchIndex
 
 if TYPE_CHECKING:
-    from FactorGo.factor_test.factor_base import FactorDataStruct
+    from FactorGo.factor_base import FactorDataStruct
 
 
 class FactorTest(BaseEstimator, TransformerMixin, metaclass=abc.ABCMeta):

@@ -1,6 +1,7 @@
 import jqdatasdk as jq
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from DataGo.model import engine
 from DataGo.fetch import get_all_sec_codes
 
@@ -46,9 +47,38 @@ def update_industry_com(start_date, end_date=None):
         print('{:03d}/{}--{} UPDATED.'.format(idx, dt_len, dt))
 
 
+def update_index_component(index_code=None, start_date=None, end_date=None):
+    """更新指数成分股"""
+
+    if not end_date:
+        end_date = datetime.today()
+
+    trade_cal = jq.get_trade_days(start_date, end_date)
+
+    def _update(code):
+        for dt in trade_cal:
+            dt_str = dt.strftime('%Y-%m-%d')
+            df_wght = jq.get_index_weights(code, date=dt_str)
+            df_wght = df_wght[['date', 'weight']].reset_index(drop=False)
+            df_wght['index_code'] = code
+            df_wght.columns = ['sec_code', 'trade_date', 'weight', 'index_code']
+            df_wght.to_sql(name='index_component_weight', con=engine, if_exists='append', index=False)
+            print("Index:{} Date: {}".format(index_code, dt_str))
+
+    if isinstance(index_code, str):
+        index_code = [index_code]
+    if index_code is None:
+        index_code = ['000300.XSHG', '000905.XSHG', '000906.XSHG', '000985.XSHG', '000852.XSHG']
+    for code in index_code:
+        _update(code)
+
+    return True
+
+
 if __name__ == "__main__":
     # TODO 命令行参数解析
     from jqdatasdk import auth
     auth('18660537822', '537822')
     # update_stock_valuation('2014-12-31', '2014-12-31')
-    update_industry_com('2014-12-31', '2014-12-31')
+    # update_industry_com('2014-12-31', '2014-12-31')
+    update_index_component(start_date='2020-05-14')

@@ -3,7 +3,7 @@ import abc
 
 from pandas import DataFrame
 from sklearn.base import BaseEstimator, TransformerMixin
-from FactorGo.factor_test.factor_base import FactorDataStruct
+from FactorGo.factor_base import FactorDataStruct
 from FactorGo.data_loader import data_api
 
 """

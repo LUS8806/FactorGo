@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+import sqlalchemy
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import Column, String, Integer, Date, Float
 from sqlalchemy.ext.declarative import declarative_base
@@ -15,7 +15,7 @@ def connect_sql(user_name=None, host=None, dbname=None, pass_word=None, port=330
                                                     SQL_CONN['port'],
                                                     SQL_CONN['db_name']
                                                     )
-    sql_engine = create_engine(conn_url, encoding='utf-8')
+    sql_engine = sqlalchemy.create_engine(conn_url, encoding='utf-8')
     return sql_engine
 
 

@@ -1,5 +1,5 @@
 
-from FactorGo.factor_test.factor_base import FactorDataStruct
+from FactorGo.factor_base import FactorDataStruct
 from DataGo.fetch import get_index_components, get_stock_fin_indicators
 
 # 取指数成分股

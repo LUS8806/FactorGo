@@ -1,12 +1,11 @@
 from pandas import DataFrame, Series
 from typing import Union, List, Callable
-from sklearn.preprocessing import OneHotEncoder
 
 from FactorGo.factor_test.constant import *
-from FactorGo.factor_test.factor_process import FactorWinsorize, FactorStandardize, FactorCodeFilter, FactorNeutralize
-from FactorGo.factor_test.factor_process import FactorMatchIndex, FactorNanProcess, FactorReturnMatch
-from FactorGo.factor_test.factor_process import FactorQuantize, FactorIndustryMatch, FactorMarketCapMatch
-from FactorGo.factor_test.factor_test import FactorICTest, FactorRegressTest, FactorQuantizeTest, FactorStats
+from FactorGo.factor_process import FactorWinsorize, FactorStandardize, FactorCodeFilter, FactorNeutralize
+from FactorGo.factor_process import FactorMatchIndex, FactorNanProcess, FactorReturnMatch
+from FactorGo.factor_process import FactorQuantize, FactorIndustryMatch, FactorMarketCapMatch
+from FactorGo.factor_test.factor_test import FactorICTest, FactorStats
 from FactorGo.factor_test.plotting import *
 
 
